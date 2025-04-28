@@ -13,10 +13,7 @@ import (
 )
 
 func main() {
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
-	fmt.Println("Logs from your program will appear here!")
-
-	// Uncomment this block to pass the first stage
+	fmt.Println("Starting Radish-Go server!")
 
 	l, err := net.Listen("tcp", "0.0.0.0:6379")
 	if err != nil {
@@ -71,50 +68,20 @@ func handleClient(conn net.Conn) {
 			fmt.Println("Error handling command: ", err)
 			continue
 		}
-
-		// fmt.Println(strconv.Atoi(string(input[1])))
-		// for i:=range(){
-
-		// 	var clientMsgLength = make([]byte)
-		// 	if err != nil {
-		// 		log.Println("unable to read from connection: ", err)
-		// 	}
-		// 	argsLength := int(clientMsgLength[1])
-		// 	fmt.Println(argsLength)
-		// if err != nil {
-		// 	log.Println("unable to read: ", err)
-		// }
-		// fmt.Println(input)
-		// if strings.Contains(input, "PING") {
-		// 	_, err = conn.Write([]byte("+PONG\r\n"))
-		// 	if err != nil {
-		// 		log.Println("Error writing response to connection", err)
-		// 	}
-		// 	conn.Close()
-		// 	return
-		// } else if strings.Contains(input, "ECHO") {
-		// 	sayLength, err := conReader.ReadString('\n')
-		// 	if err != nil {
-		// 		log.Println("unable to read: ", err)
-		// 	}
-		// 	say, err := conReader.ReadString('\n')
-		// 	fmt.Println("to say:", say)
-		// 	_, err = conn.Write(append([]byte(sayLength), []byte(say)...))
-		// 	if err != nil {
-		// 		log.Println("Error writing response to connection", err)
-		// 	}
-		// 	conn.Close()
-		// 	return
-		// }
-
 	}
 
 }
 
 func handleCommand(cmd []string, conn net.Conn) error {
-	switch cmd[0] {
+	switch strings.ToUpper(cmd[0]) {
 	case "PING":
 		_, err := conn.Write([]byte("+PONG\r\n"))
+		if err != nil {
+			return fmt.Errorf("Error writing response to connection: %w", err)
+		}
+	case "ECHO":
+		payload := "$" + strconv.Itoa(len(cmd[1])) + "\r\n" + cmd[1] + "\r\n"
+		_, err := conn.Write([]byte(payload))
 		if err != nil {
 			return fmt.Errorf("Error writing response to connection: %w", err)
 		}
