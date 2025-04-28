@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"net"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -32,20 +34,39 @@ func main() {
 }
 
 func handleClient(conn net.Conn) {
-	var dataFromConn []byte
-	var err error
+	var conReader = bufio.NewReader(conn)
 	for {
-		_, err = conn.Read(dataFromConn)
+		input, err := conReader.ReadString('\n')
 		if err != nil {
-			log.Fatal("unable to read")
+			log.Println("unable to read: ", err)
 		}
-		fmt.Println(dataFromConn)
-
-		_, err = conn.Write([]byte("+PONG\r\n"))
-		if err != nil {
-			log.Println("Error writing response to connection", err)
+		fmt.Println(input)
+		if strings.Contains(input, "PING") {
+			_, err = conn.Write([]byte("+PONG\r\n"))
+			if err != nil {
+				log.Println("Error writing response to connection", err)
+			}
+			conn.Close()
+			return
+		} else if strings.Contains(input, "ECHO") {
+			sayLength, err := conReader.ReadString('\n')
+			if err != nil {
+				log.Println("unable to read: ", err)
+			}
+			say, err := conReader.ReadString('\n')
+			fmt.Println("to say:", say)
+			_, err = conn.Write(append([]byte(sayLength), []byte(say)...))
+			if err != nil {
+				log.Println("Error writing response to connection", err)
+			}
+			conn.Close()
 			return
 		}
+
 	}
+
+}
+
+func parseCommand() {
 
 }
