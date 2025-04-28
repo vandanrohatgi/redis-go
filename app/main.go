@@ -18,13 +18,23 @@ func main() {
 		fmt.Println("Failed to bind to port 6379")
 		os.Exit(1)
 	}
+	defer l.Close()
 	for {
 		conn, err := l.Accept()
 		if err != nil {
 			fmt.Println("Error accepting connection: ", err.Error())
 			os.Exit(1)
 		}
-		var dataFromConn []byte
+		fmt.Println("New client found!")
+		// conn.SetReadDeadline(time.Time(5 * time.Second))
+		go handleClient(conn)
+	}
+}
+
+func handleClient(conn net.Conn) {
+	var dataFromConn []byte
+	var err error
+	for {
 		_, err = conn.Read(dataFromConn)
 		if err != nil {
 			log.Fatal("unable to read")
@@ -33,8 +43,8 @@ func main() {
 
 		_, err = conn.Write([]byte("+PONG\r\n"))
 		if err != nil {
-			fmt.Println("Error writing response: ", err)
-			os.Exit(1)
+			log.Println("Error writing response to connection", err)
+			return
 		}
 	}
 
