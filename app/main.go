@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+var storage = make(map[string]string)
+
 func main() {
 	fmt.Println("Starting Radish-Go server!")
 
@@ -80,7 +82,36 @@ func handleCommand(cmd []string, conn net.Conn) error {
 			return fmt.Errorf("Error writing response to connection: %w", err)
 		}
 	case "ECHO":
+		if len(cmd) < 2 {
+			return fmt.Errorf("ECHO takes 1 arguement, 0 given")
+		}
 		payload := "$" + strconv.Itoa(len(cmd[1])) + "\r\n" + cmd[1] + "\r\n"
+		_, err := conn.Write([]byte(payload))
+		if err != nil {
+			return fmt.Errorf("Error writing response to connection: %w", err)
+		}
+	case "SET":
+		if len(cmd) < 3 {
+			return fmt.Errorf("SET takes 2 arguements, %d given", len(cmd))
+		}
+		storage[cmd[1]] = cmd[2]
+		_, err := conn.Write([]byte("+OK\r\n"))
+		if err != nil {
+			return fmt.Errorf("Error writing response to connection: %w", err)
+		}
+	case "GET":
+		if len(cmd) < 2 {
+			return fmt.Errorf("GET takes 1 arguement, 0 given")
+		}
+		val, exists := storage[cmd[1]]
+		if !exists {
+			_, err := conn.Write([]byte("$-1\r\n"))
+			if err != nil {
+				return fmt.Errorf("Error writing response to connection: %w", err)
+			}
+			break
+		}
+		payload := "$" + strconv.Itoa(len(val)) + "\r\n" + val + "\r\n"
 		_, err := conn.Write([]byte(payload))
 		if err != nil {
 			return fmt.Errorf("Error writing response to connection: %w", err)
