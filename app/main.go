@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -13,6 +14,13 @@ import (
 )
 
 var storage = make(map[string]string)
+var configMap = make(map[string]string)
+var dir, dbFileName string
+
+func init() {
+	configMap["dir"] = *flag.String("dir", "/tmp", "directory for your rdb file")
+	configMap["dbFileName"] = *flag.String("dbFileName", "radish.rdb", "name for your rdb file")
+}
 
 func main() {
 	fmt.Println("Starting Radish-Go server!")
@@ -124,6 +132,26 @@ func handleCommand(cmd []string, conn net.Conn) error {
 		if err != nil {
 			return fmt.Errorf("Error writing response to connection: %w", err)
 		}
+	case "CONFIG":
+		if strings.ToUpper(cmd[1]) == "GET" {
+			if len(cmd) < 2 {
+				return fmt.Errorf("CONFIG GET takes 1 arguement, 0 given")
+			}
+			val, exists := configMap[cmd[2]]
+			if !exists {
+				_, err := conn.Write([]byte("$-1\r\n"))
+				if err != nil {
+					return fmt.Errorf("Error writing response to connection: %w", err)
+				}
+				break
+			}
+			payload := "*2\r\n" + "$" + strconv.Itoa(len(cmd[2])) + "\r\n" + cmd[2] + "\r\n$" + strconv.Itoa(len(val)) + "\r\n" + val + "\r\n"
+			_, err := conn.Write([]byte(payload))
+			if err != nil {
+				return fmt.Errorf("Error writing response to connection: %w", err)
+			}
+		}
+
 	default:
 		return errors.New("This command is not supported yet!")
 	}
