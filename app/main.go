@@ -92,13 +92,21 @@ func handleCommand(cmd []string, conn net.Conn) error {
 		}
 	case "SET":
 		if len(cmd) < 3 {
-			return fmt.Errorf("SET takes 2 arguements, %d given", len(cmd))
+			return fmt.Errorf("SET requires at least 3 arguements, %d given", len(cmd))
 		}
 		storage[cmd[1]] = cmd[2]
+		if len(cmd) == 5 && strings.ToUpper(cmd[3]) == "PX" {
+			expire, err := strconv.Atoi(cmd[4])
+			if err != nil {
+				return fmt.Errorf("invalid expiration time provided")
+			}
+			go expireKey(cmd[1], expire)
+		}
 		_, err := conn.Write([]byte("+OK\r\n"))
 		if err != nil {
 			return fmt.Errorf("Error writing response to connection: %w", err)
 		}
+
 	case "GET":
 		if len(cmd) < 2 {
 			return fmt.Errorf("GET takes 1 arguement, 0 given")
@@ -120,4 +128,9 @@ func handleCommand(cmd []string, conn net.Conn) error {
 		return errors.New("This command is not supported yet!")
 	}
 	return nil
+}
+
+func expireKey(key string, t int) {
+	time.Sleep(time.Duration(t) * time.Millisecond)
+	delete(storage, key)
 }
