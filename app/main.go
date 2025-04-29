@@ -29,6 +29,27 @@ func main() {
 	fmt.Println("Starting Radish-Go server!")
 	fmt.Printf("Loaded configs: %v", configMap)
 
+	// Prep rdb file
+	dbFile, err := os.Create(*dir + "/" + *dbFileName)
+	if err != nil {
+		log.Fatal("Error creating RDB file: ", err)
+	}
+	defer dbFile.Close()
+	var initialHeaders = []byte("REDIS0011\n")
+	initialHeaders = append(initialHeaders, 0xFA)
+	initialHeaders = append(initialHeaders, []byte("\nredis-ver\n6.0.16\n")...)
+	initialHeaders = append(initialHeaders, 0xFE)
+	initialHeaders = append(initialHeaders, '\n')
+	initialHeaders = append(initialHeaders, 0x00)
+	initialHeaders = append(initialHeaders, 0xFB)
+	initialHeaders = append(initialHeaders, 0x03)
+	initialHeaders = append(initialHeaders, 0x02)
+	_, err = dbFile.Write(initialHeaders)
+	if err != nil {
+		log.Fatal("Error writing to rdb file", err)
+	}
+
+	// start networking
 	l, err := net.Listen("tcp", "0.0.0.0:6379")
 	if err != nil {
 		fmt.Println("Failed to bind to port 6379")
