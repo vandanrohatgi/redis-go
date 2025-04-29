@@ -15,15 +15,19 @@ import (
 
 var storage = make(map[string]string)
 var configMap = make(map[string]string)
-var dir, dbFileName string
+var dir, dbFileName *string
 
 func init() {
-	configMap["dir"] = *flag.String("dir", "/tmp", "directory for your rdb file")
-	configMap["dbFileName"] = *flag.String("dbFileName", "radish.rdb", "name for your rdb file")
+	dir = flag.String("dir", "/tmp", "directory for your rdb file")
+	dbFileName = flag.String("dbFileName", "radish.rdb", "name for your rdb file")
+	flag.Parse()
+	configMap["dir"] = *dir
+	configMap["dbFileName"] = *dbFileName
 }
 
 func main() {
 	fmt.Println("Starting Radish-Go server!")
+	fmt.Printf("Loaded configs: %v", configMap)
 
 	l, err := net.Listen("tcp", "0.0.0.0:6379")
 	if err != nil {
