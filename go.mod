@@ -1,3 +1,3 @@
-module github.com/codecrafters-io/redis-starter-go
+module github.com/vandanrohatgi/radish-go
 
-go 1.24.0
+go 1.23.4
